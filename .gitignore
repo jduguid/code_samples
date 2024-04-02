@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+
+# Distribution/packaging
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+sdist/
+var/
+wheels/
+*.egg-info/
+*.egg
+
+# Unit testing
+.pytest_cache/
+
+# Sphinx documentation
+docs/_build/
+
+# Jupyter
+*.ipynb
+.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# mypy
+.mypy_cache/
+

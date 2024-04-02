@@ -1,0 +1,16 @@
+[build-system]
+requires = [setuptools >= 61.0]
+build-backend = [setuptools.build_meta]
+
+[project]
+name = "outlier_detection"
+version = "0.1"
+# ToDo: Check to see if letting certain parts of the project table should be 
+#       dynamically filled by setuptools
+dependencies = [
+    "numpy"
+]
+# ToDo: Change this if I don't end up using dataclasses
+requires-python = ">= 3.8"
+description = "Toy examples of outlier detection routines for use as code samples."
+# ToDo: Add a README.md with readme = "README.md"
