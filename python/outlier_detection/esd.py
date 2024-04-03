@@ -8,11 +8,13 @@ from dataclasses import dataclass
 
 Numeric = Union[int, float]
 
+
 @dataclass
 class PotentialOutlier:
     value: Numeric
     test_stat: float
     index: int
+
 
 @dataclass
 class CriticalValue:
@@ -24,12 +26,16 @@ def esd_test(data: npt.NDArray[np.number], n_outliers: int, alpha: float = 0.05)
     if data.ndim != 1:
         raise ValueError("Data must be one dimensional")
     if n_outliers == 0:
-        raise ValueError("Number of outliers must be greater than 0. Null hypothesis being tested for is that there are zero outliers")
+        raise ValueError(
+            "Number of outliers must be greater than 0. Null hypothesis being tested for is that there are zero outliers"
+        )
     n_obs: int = data.size
     ps: List[PotentialOutlier] = _test_stats(data, n_outliers)
     cvs: List[CriticalValue] = _critical_vals(n_outliers, n_obs, alpha)
     zipped_vals: List[Tuple[PotentialOutlier, CriticalValue]] = list(zip(ps, cvs))
-    tests_passed: List[int] = [v.num_outliers for p,v in zipped_vals if p.test_stat > v.critical_value]
+    tests_passed: List[int] = [
+        v.num_outliers for p, v in zipped_vals if p.test_stat > v.critical_value
+    ]
     if tests_passed == []:
         num_outliers: int = 0
     else:
@@ -44,7 +50,9 @@ def _max_test_stat(data: npt.NDArray[np.number]) -> PotentialOutlier:
     return PotentialOutlier(data[max_idx], stat, max_idx)
 
 
-def _test_stats(data: npt.NDArray[np.number], n_outliers: int) -> List[PotentialOutlier]:
+def _test_stats(
+    data: npt.NDArray[np.number], n_outliers: int
+) -> List[PotentialOutlier]:
     # This is a performance bottle neck, but given the iteration here
     # it would be a trick to parallelize this computation
     potential_outliers: List[PotentialOutlier] = []
