@@ -1,8 +1,9 @@
 from importlib import resources
 import numpy as np
 import numpy.typing as npt
-from typing import List
-from outlier_detection.esd import esd_test, _critical_vals, _test_stats, Numeric
+from typing import List, Union
+from outlier_detection.esd import esd_test, _critical_vals, _test_stats
+
 
 
 def get_test_data() -> npt.NDArray[np.float_]:
@@ -11,9 +12,9 @@ def get_test_data() -> npt.NDArray[np.float_]:
         return rosner_data
     
 
-def acceptable_diff(a: List[Numeric], b: List[Numeric], thresh: Numeric) -> bool:
-    diffs: List[Numeric] = [abs(i - j) for i, j in zip(a, b)]
-    diffs_acceptable: List[bool] = [d <= thresh for d in diffs]
+def acceptable_diff(a: List[np.float_], b: List[np.float_], thresh: float) -> bool:
+    diffs: List[np.number] = [abs(i - j) for i, j in zip(a, b)]
+    diffs_acceptable: List[np.bool_] = [d <= thresh for d in diffs]
     return all(diffs_acceptable)
     
 
@@ -36,8 +37,9 @@ class TestEsdComponents:
             3.094,
             3.085,
         ]
+        rosner_cvs: List[np.float_] = [np.float_(i) for i in rosner_cvs]
         rosner_data: npt.NDArray[np.float_] = get_test_data()
-        cvs: List[float] = [round(v.critical_value, 3) for v in _critical_vals(10, rosner_data.size, 0.05)]
+        cvs: List[np.float_] = [np.round(v.critical_value, 3) for v in _critical_vals(10, rosner_data.size, 0.05)]
         assert acceptable_diff(rosner_cvs, cvs, 0.01)
 
     def test_rosner_test_stats(self):
@@ -53,6 +55,7 @@ class TestEsdComponents:
             2.101,
             2.067,
         ]
+        rosner_tss: List[np.float_] = [np.float_(i) for i in rosner_tss]
         rosner_data: npt.NDArray[np.float_] = get_test_data()
-        tss: List[float] = [round(t.test_stat, 3) for t in _test_stats(rosner_data, 10)]
+        tss: List[np.float_] = [np.round(t.test_stat, 3) for t in _test_stats(rosner_data, 10)]
         assert acceptable_diff(rosner_tss, tss, 0.01)
