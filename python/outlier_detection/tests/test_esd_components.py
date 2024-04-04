@@ -49,6 +49,8 @@ class TestEsdComponents:
         cvs: List[np.float_] = [np.round(v.critical_value, 3) for v in _critical_vals(10, rosner_data.size, 0.05)]
         assert acceptable_diff(rosner_cvs, cvs, 0.01)
 
+    # TODO: This test is still not passing, despite the whole procedure producing the correct result.
+    #       Could this have something to do with rounding behavior or something else?
     def test_rosner_test_stats(self):
         rosner_tss: List[float] = [
             3.118,
