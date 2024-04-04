@@ -19,6 +19,13 @@ def acceptable_diff(a: List[np.float_], b: List[np.float_], thresh: float) -> bo
     
 
 class TestEsdComponents:
+    """
+    Replicates results of Rosner (1983) described in National Institute for Technology 
+    and Standards guide at: https://www.itl.nist.gov/div898/handbook/eda/section3//eda35h3.htm
+
+    The test data, critical values, and test statistics used in this test class can all be 
+    found on that page.
+    """
     def test_rosner_result(self):
         rosner_outliers: int = 3
         rosner_data: npt.NDArray[np.float_] = get_test_data()
