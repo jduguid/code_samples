@@ -56,7 +56,7 @@ def _max_test_stat(data: npt.NDArray[np.number]) -> PotentialOutlier:
     "Private function to calculate test stats following Rosner (1983)"
     dists: npt.NDArray[np.number] = np.abs(data - data.mean())
     max_idx: np.intp = dists.argmax()
-    stat: np.float_ = dists[max_idx] / data.std()
+    stat: np.float_ = dists[max_idx] / data.std(ddof=1)
     return PotentialOutlier(data[max_idx], stat, max_idx)
 
 
