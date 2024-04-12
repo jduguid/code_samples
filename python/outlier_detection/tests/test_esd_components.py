@@ -1,4 +1,4 @@
-from importlib import resources
+from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 from typing import List, Union
@@ -7,8 +7,9 @@ from outlier_detection.esd import esd_test, _critical_vals, _test_stats
 
 
 def get_test_data() -> npt.NDArray[np.float_]:
-        with resources.path("outlier_detection.tests", "rosner_data.csv") as path:
-            rosner_data: npt.NDArray[np.float_] = np.genfromtxt(path, delimiter=",")
+        repo_root: Path = Path(__file__).parents[3]
+        data_path: Path = repo_root.joinpath("rosner_data.csv")
+        rosner_data: npt.NDArray[np.float_] = np.genfromtxt(str(data_path), delimiter=",")
         return rosner_data
     
 
@@ -49,8 +50,7 @@ class TestEsdComponents:
         cvs: List[np.float_] = [np.round(v.critical_value, 3) for v in _critical_vals(10, rosner_data.size, 0.05)]
         assert acceptable_diff(rosner_cvs, cvs, 0.01)
 
-    # TODO: This test is still not passing, despite the whole procedure producing the correct result.
-    #       Could this have something to do with rounding behavior or something else?
+
     def test_rosner_test_stats(self):
         rosner_tss: List[float] = [
             3.118,
