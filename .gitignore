@@ -1,4 +1,7 @@
-# Python
+#IDE
+.vscode/
+
+# PYTHON
 __pycache__/
 
 # Distribution/packaging
@@ -33,4 +36,11 @@ venv/
 
 # mypy
 .mypy_cache/
+
+# SCALA
+*/.bloop/
+*/.bsp/
+*/.metals/
+project/
+
 
