@@ -9,7 +9,8 @@ import outlier_detection.HelperClasses.CriticalValue
 object Esd {
   def esdTest[A](data: Vector[A], nOutliers: Int, alpha: Double = 0.05)(implicit num: Numeric[A]): Int = {
     val nObs: Int = data.size
-    val tss: Vector[Double] = testStats(data, nOutliers)
+    val doubleVals: Vector[Double] = data.map(i => num.toDouble(i))
+    val tss: Vector[Double] = testStats(doubleVals, nOutliers)
     val critVals: Vector[CriticalValue] = criticalValues(nOutliers, nObs, alpha)
     val testsPasssed: Vector[Int] = {
       tss.zip(critVals).filter(
@@ -30,8 +31,8 @@ object Esd {
     stat
   }
  
-  private def testStats[A](data: Vector[A], nOutliers: Int)(implicit num: Numeric[A]): Vector[Double] = {
-    val sortedData: Vector[Double] = data.map(i => num.toDouble(i)).sortWith((a, b) => a > b)
+  private def testStats(data: Vector[Double], nOutliers: Int): Vector[Double] = {
+    val sortedData: Vector[Double] = data.sortWith((a, b) => a > b)
     val maxes: Vector[Double] = (1 to nOutliers)
       .foldLeft(Vector.empty[Double])(
         (acc, i) => {
