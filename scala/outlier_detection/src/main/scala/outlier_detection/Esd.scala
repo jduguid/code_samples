@@ -1,21 +1,22 @@
 package outlier_detection
 
+import scala.annotation.tailrec
 import scala.math.{abs, pow, sqrt}
 import breeze.stats.{mean, stddev}
 import org.apache.commons.math3.distribution.TDistribution
-import outlier_detection.HelperClasses.CriticalValue
+import outlier_detection.Helpers.{CriticalValue, PotentialOutlier, dropElemAt}
 
 
 object Esd {
   def esdTest[A](data: Vector[A], nOutliers: Int, alpha: Double = 0.05)(implicit num: Numeric[A]): Int = {
     val nObs: Int = data.size
     val doubleVals: Vector[Double] = data.map(i => num.toDouble(i))
-    val tss: Vector[Double] = testStats(doubleVals, nOutliers)
+    val tss: Vector[PotentialOutlier] = testStats(doubleVals, nOutliers)
     val critVals: Vector[CriticalValue] = criticalValues(nOutliers, nObs, alpha)
     val testsPasssed: Vector[Int] = {
       tss.zip(critVals).filter(
         tuple => {
-          tuple._1 > tuple._2.criticalValue
+          tuple._1.testStat > tuple._2.criticalValue
         }
       )
       .map(tuple => tuple._2.numOutliers)
@@ -23,33 +24,38 @@ object Esd {
     if (testsPasssed.isEmpty) {0} else {testsPasssed.max}
   }
 
-  private def maxTestStat(data: Vector[Double]): Double = {
-    val avg: Double = mean(data)
+  private def maxTestStat(data: Vector[Double]): PotentialOutlier = {
     val std: Double = stddev(data)
+    val avg: Double = mean(data)
     val dists: Vector[Double] = data.map(i => abs(i - avg))
-    val stat: Double = dists.max / std
-    stat
+    val maxDist: Double = dists.max
+    val idxOfMax: Int = dists.indexOf(maxDist)
+    val testStat: Double = maxDist / std
+    val value: Double = data(idxOfMax)
+    PotentialOutlier(value, testStat, idxOfMax)
   }
- 
-  private def testStats(data: Vector[Double], nOutliers: Int): Vector[Double] = {
-    val sortedData: Vector[Double] = data.sortWith((a, b) => a > b)
-    val maxes: Vector[Double] = (1 to nOutliers)
-      .foldLeft(Vector.empty[Double])(
-        (acc, i) => {
-          val max: Double = maxTestStat(sortedData.drop(i))
-          acc :+ max
-        }
-      )
-      maxes
+
+  private def testStats(data: Vector[Double], nOutliers: Int): Vector[PotentialOutlier] = {
+    @tailrec
+    def loop(data: Vector[Double], iterations: List[Int], maxes: Vector[PotentialOutlier]): Vector[PotentialOutlier] = {
+      iterations match {
+        case Nil => maxes
+        case i :: iters => {
+          val maxStat: PotentialOutlier = maxTestStat(data)
+          val nextData: Vector[Double] = Helpers.dropElemAt(data, maxStat.index)
+          loop(nextData, iters, maxes :+ maxStat)
+        } 
+      }  
+    }
+    loop(data, List.range(0, nOutliers), Vector.empty[PotentialOutlier])
   }
 
   private def criticalValue(testStatIdx: Int, nObs: Int, alpha: Double): Double = {
-    val ptile: Double = (1 - (alpha / (2 * (nObs - testStatIdx + 1)))).toDouble
-    val dof: Double = (nObs - testStatIdx - 1).toDouble
-    // Might need to change this to n - 1
-    val percPt: Double = new TDistribution(1).inverseCumulativeProbability(alpha)
-    val numerator: Double = (nObs - testStatIdx) * percPt
-    val a: Double = dof + pow(percPt, 2)
+    val ptile: Double = 1.0 - (alpha / (2.0 * (nObs - testStatIdx + 1).toDouble))
+    val dof: Int = nObs - testStatIdx - 1
+    val percPt: Double = new TDistribution(dof).inverseCumulativeProbability(ptile)
+    val numerator: Double = (nObs - testStatIdx).toDouble * percPt
+    val a: Double = dof.toDouble + pow(percPt, 2)
     val b: Double = (nObs - testStatIdx + 1).toDouble
     val denominator: Double = sqrt(a * b)
     numerator / denominator
@@ -62,5 +68,13 @@ object Esd {
         CriticalValue(i, cv)
       }
     ).toVector
+  }
+
+  private def stdDev[A](data: Vector[A])(implicit num: Numeric[A]): Double = {
+    val doubles: Vector[Double] = data.map(i => num.toDouble(i))
+    val avg: Double = mean(doubles)
+    val squaredDevs: Vector[Double] = doubles.map(i => pow(i - avg, 2))
+    val variance: Double = mean(squaredDevs)
+    sqrt(variance)
   }
 }
