@@ -21,6 +21,11 @@ def esd_test(data: npt.NDArray[np.number], n_outliers: int, alpha: float = 0.05)
     The original paper describing the procedure is: 
     Rosner, B. (1983). Percentage Points for a Generalized ESD Many-Outlier Procedure. Technometrics 25, 165–172. 
     
+    :note: On performance. This function scales approximately linearly with the amount of data to be tested 
+           and with the number of outliers to be tested. For example, testing for 10 outliers in a 
+           series of 10 million could take 1 second, while testing for 10 outliers in a series 
+           of 100 million could take 10 seconds. Similarly, testing for 100 outliers in a series of 10 million 
+           could take 10 seconds as opposed to 1 second when testing for 10 outliers in the same series.  
     :param data: A 1-d numpy array of numeric data
     :param n_outliers: Maximum number of outliers to test for
     :param alpha: Confidence level of hypothesis tests
@@ -54,6 +59,10 @@ class PotentialOutlier:
 
 def _max_test_stat(data: npt.NDArray[np.number]) -> PotentialOutlier:
     "Private function to calculate test stats following Rosner (1983)"
+    # Testing the code with cProfile indicated that this function is the costliest in 
+    # terms of performance. Because this function already uses fast numpy built-ins here,
+    # optimizing this function further might be too costly in terms of current developer
+    # time and future maintainability/readability.
     dists: npt.NDArray[np.number] = np.abs(data - data.mean())
     max_idx: np.intp = dists.argmax()
     stat: np.float_ = dists[max_idx] / data.std(ddof=1)
@@ -64,11 +73,18 @@ def _test_stats(
     data: npt.NDArray[np.number], n_outliers: int
 ) -> List[PotentialOutlier]:
     "Calculate all test stats maximizing distance from mean, removing, then repeating"
+    # cProfile also indicates this function could be a place for optimization. This is
+    # because it calls the most expensive per-call function in the routine - 
+    # _max_test_stat - n times. However, because of the ESD algorithm is iterative and  
+    # each iteration requires information from the previous iteration, it may be quite 
+    # tricky to optimize this function (e.g. through parallelization).
     potential_outliers: List[PotentialOutlier] = []
     for i in range(1, n_outliers + 1):
-        # This max then append pattern essentially enforces the order we want
+        # This max then append pattern essentially enforces the order required 
+        # for correctness.
         p: PotentialOutlier = _max_test_stat(data)
-        # Not a huge fan of the use of mutability here
+        # I am not a huge fan of the use of mutability here, but am trading off 
+        # safety in design for readability/maintainability here.
         potential_outliers.append(p)
         data: np.ndarray = np.delete(data, p.index)
     return potential_outliers
@@ -81,7 +97,7 @@ class CriticalValue:
 
 
 def _critical_val(test_stat_idx: int, n_obs: int, alpha: float) -> np.float_:
-    "Calculates critical values based on T-dist following Rosner (1983)"
+    "Calculates critical values based on T-distribution following Rosner (1983)"
     ptile: float = 1 - (alpha / (2 * (n_obs - test_stat_idx + 1)))
     dof: int = n_obs - test_stat_idx - 1
     perc_pt: np.float_ = stats.t.ppf(ptile, dof)

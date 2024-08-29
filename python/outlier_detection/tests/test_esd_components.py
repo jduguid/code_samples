@@ -26,6 +26,8 @@ class TestEsdComponents:
 
     The test data, critical values, and test statistics used in this test class can all be 
     found on that page.
+
+    This test class uses the pytest framework to run.
     """
     def test_rosner_result(self):
         rosner_outliers: int = 3
